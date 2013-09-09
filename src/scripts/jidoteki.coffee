@@ -19,7 +19,7 @@ util      = require 'util'
 jidoteki  = require 'jidoteki'
 
 jidoteki.settings.useragent = 'hubot-jidoteki/0.2'
-jidoteki.settings.role = 'op'
+jidoteki.settings.role = process.env.JIDOTEKI_ROLE || 'op'
 
 module.exports = (robot) ->
   requireAuth = (robot, msg) ->
