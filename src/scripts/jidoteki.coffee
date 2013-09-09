@@ -16,73 +16,21 @@
 
 crypto    = require 'crypto'
 util      = require 'util'
+jidoteki  = require 'jidoteki'
 
-jido = exports ? this
+jidoteki.settings.useragent = 'hubot-jidoteki/0.2'
+jidoteki.settings.role = 'op'
 
 module.exports = (robot) ->
-  jido.settings =
-    userid:     process.env.JIDOTEKI_USERID
-    apikey:     process.env.JIDOTEKI_APIKEY
-    role:       process.env.JIDOTEKI_ROLE || 'op'
-    url:        'https://api.beta.jidoteki.com/v0'
-    useragent:  'hubot-jidoteki/0.1'
-    token:      null
-
-  unless jido.settings.userid? or jido.settings.apikey?
-    console.log "JIDOTEKI_ environment variables are not configured. More info at: http://jidoteki.com"
-    return
-
-  makeHMAC = (string, callback) ->
-    hmac = crypto.createHmac('sha256', jido.settings.apikey).update(string).digest 'hex'
-    callback(hmac)
-
-  getToken = (callback) ->
-    resource = '/auth/user'
-    makeHMAC "GET#{jido.settings.url}#{resource}", (signature) ->
-      robot.http("#{jido.settings.url}#{resource}")
-        .headers
-          'X-Auth-UID': jido.settings.userid
-          'X-Auth-Signature': signature
-          'User-Agent': jido.settings.useragent
-        .get() (err, res, body) ->
-          data = JSON.parse body
-          if data.success
-            jido.settings.token = data.success.content
-            setTimeout ->
-              jido.settings.token = null
-            , 27000000 # Expire the token after 7.5 hours
-          callback data
-
-  getData = (type, resource, callback) ->
-    makeHMAC "#{type.toUpperCase()}#{jido.settings.url}#{resource}", (signature) ->
-      robot.http("#{jido.settings.url}#{resource}")
-        .headers
-          'X-Auth-Token': jido.settings.token
-          'X-Auth-Signature': signature
-          'User-Agent': jido.settings.useragent
-        .get() (err, res, body) ->
-          data = JSON.parse body
-          jido.settings.token = null if data.error and data.error.message is 'Unable to authenticate'
-          callback data
-
-  makeRequest = (type, resource, callback) ->
-    if jido.settings.token isnt null
-      getData type, resource, (data) ->
-        callback data
-    else
-      getToken (result) ->
-        getData type, resource, (data) ->
-          callback data
-
   requireAuth = (robot, msg) ->
-    role = robot.auth.hasRole msg.envelope.user, jido.settings.role
+    role = robot.auth.hasRole msg.envelope.user, jidoteki.settings.role
     return true unless role is false
-    msg.reply "Sorry, you need the '#{jido.settings.role}' role to perform that command."
+    msg.reply "Sorry, you need the '#{jidoteki.settings.role}' role to perform that command."
     return false
 
   robot.respond /jido os list/i, (msg) ->
     msg.send "Fetching Operating Systems list"
-    makeRequest 'GET', '/os/list', (data) ->
+    jidoteki.makeRequest 'GET', '/os/list', (data) ->
       if data.success
         os_list = data.success.content
         # format the OS list into a table
@@ -103,7 +51,7 @@ module.exports = (robot) ->
     return unless requireAuth(robot, msg)
 
     msg.send "Fetching 10 most recent servers.."
-    makeRequest 'GET', '/server/list', (data) ->
+    jidoteki.makeRequest 'GET', '/server/list', (data) ->
       if data.success
         server_list = data.success.content[0..9] # limit to only 10 results
         # format the server list into a table
