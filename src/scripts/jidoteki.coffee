@@ -2,6 +2,10 @@
 #   Build virtual appliances using Jidoteki
 #   http://jidoteki.com
 #
+# Installation:
+#   add jidoteki as a dependency in your package.json
+#   or: npm install jidoteki
+#
 # Configuration
 #   JIDOTEKI_USERID = your 7 character user id
 #   JIDOTEKI_APIKEY = your 64 character API key
@@ -14,11 +18,10 @@
 # Author:
 #   aw
 
-crypto    = require 'crypto'
 util      = require 'util'
 jidoteki  = require 'jidoteki'
 
-jidoteki.settings.useragent = 'hubot-jidoteki/0.2'
+jidoteki.settings.useragent = 'hubot-jidoteki/0.3'
 jidoteki.settings.role = process.env.JIDOTEKI_ROLE || 'op'
 
 module.exports = (robot) ->
